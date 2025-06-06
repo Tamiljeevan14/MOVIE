@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineBook - Movie Ticket Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .movie-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .seat {
+            width: 30px;
+            height: 30px;
+            margin: 5px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .seat.selected {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .seat.occupied {
+            background-color: #e2e8f0;
+            cursor: not-allowed;
+        }
+        
+        .seat.available:hover {
+            background-color: #93c5fd;
+        }
+        
+        .screen {
+            background: linear-gradient(to bottom, #e2e8f0, #cbd5e1);
+            height: 20px;
+            width: 100%;
+            margin-bottom: 30px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transform: perspective(300px) rotateX(-20deg);
+        }
+        
+        .nav-link {
+            position: relative;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .active::after {
+            width: 100%;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .rating-star {
+            color: #f59e0b;
+        }
+        
+        .external-link {
+            transition: all 0.3s ease;
+        }
+        
+        .external-link:hover {
+            transform: scale(1.1);
+        }
+        
+        .filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-film text-blue-400 text-2xl"></i>
+                <span class="text-xl font-bold">CineBook</span>
+            </div>
+            <div class="hidden md:flex space-x-6">
+                <a href="#" class="nav-link active" onclick="showTab('movies')">Movies</a>
+                <a href="#" class="nav-link" onclick="showTab('details')">Details</a>
+                <a href="#" class="nav-link" onclick="showTab('seats')">Seats</a>
+                <a href="#" class="nav-link" onclick="showTab('confirmation')">Confirmation</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="window.location.href='signin.html'" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md font-medium transition">
+                    Sign In
+                </button>
+                <button class="md:hidden" id="mobile-menu-button">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden bg-gray-800" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700" onclick="showTab('movies')">Movies</a>
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700" onclick="showTab('details')">Details</a>
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700" onclick="showTab('seats')">Seats</a>
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700" onclick="showTab('confirmation')">Confirmation</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Movies Tab -->
+        <div id="movies" class="tab-content active">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <h1 class="text-3xl font-bold text-gray-800">Now Showing</h1>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterMovies('all')" class="filter-btn px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition active">
+                        All
+                    </button>
+                    <button onclick="filterMovies('action')" class="filter-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition">
+                        Action
+                    </button>
+                    <button onclick="filterMovies('comedy')" class="filter-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition">
+                        Comedy
+                    </button>
+                    <button onclick="filterMovies('drama')" class="filter-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition">
+                        Drama
+                    </button>
+                    <button onclick="filterMovies('sci-fi')" class="filter-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition">
+                        Sci-Fi
+                    </button>
+                </div>
+            </div>
+            
+            <div id="movies-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Movies will be loaded here by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Details Tab -->
+        <div id="details" class="tab-content">
+            <button onclick="showTab('movies')" class="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Movies
+            </button>
+            
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="md:flex">
+                    <div class="md:w-1/3">
+                        <img id="detail-poster" src="" alt="Movie Poster" class="w-full h-full object-cover">
+                    </div>
+                    <div class="md:w-2/3 p-6">
+                        <h1 id="detail-title" class="text-3xl font-bold text-gray-800 mb-2"></h1>
+                        <div id="detail-meta" class="flex items-center text-gray-600 mb-4">
+                            <!-- Meta info will be filled by JavaScript -->
+                        </div>
+                        
+                        <div class="flex items-center mb-6">
+                            <div id="detail-rating" class="bg-blue-600 text-white px-3 py-1 rounded-md text-lg font-bold mr-4">
+                                <!-- Rating will be filled by JavaScript -->
+                            </div>
+                            <div id="detail-stars" class="flex">
+                                <!-- Stars will be filled by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <h2 class="text-xl font-semibold text-gray-800 mb-2">Overview</h2>
+                        <p id="detail-overview" class="text-gray-600 mb-6">
+                            <!-- Overview will be filled by JavaScript -->
+                        </p>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-500 uppercase">Director</h3>
+                                <p id="detail-director" class="text-gray-800"></p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-500 uppercase">Cast</h3>
+                                <p id="detail-cast" class="text-gray-800"></p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-500 uppercase">Release Date</h3>
+                                <p id="detail-date" class="text-gray-800"></p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-500 uppercase">Language</h3>
+                                <p id="detail-language" class="text-gray-800"></p>
+                            </div>
+                        </div>
+                        
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Showtimes</h2>
+                        <div id="showtimes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
+                            <!-- Showtimes will be filled by JavaScript -->
+                        </div>
+                        
+                        <button onclick="showTab('seats')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium text-lg transition">
+                            Book Now - Rs.200
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seats Tab -->
+        <div id="seats" class="tab-content">
+            <button onclick="showTab('details')" class="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Movie Details
+            </button>
+            
+            <div class="bg-white rounded-lg shadow-md overflow-hidden p-6">
+                <div class="mb-8">
+                    <h1 id="seats-title" class="text-2xl font-bold text-gray-800 mb-1"></h1>
+                    <div id="seats-meta" class="flex items-center text-gray-600">
+                        <!-- Meta info will be filled by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="max-w-2xl mx-auto">
+                    <div class="screen mb-12"></div>
+                    
+                    <div class="flex justify-center mb-8">
+                        <div class="grid grid-cols-8 gap-1">
+                            <!-- Screen Row -->
+                            <div class="col-span-8 text-center text-sm text-gray-500 mb-2">Screen</div>
+                            
+                            <!-- Seats will be generated by JavaScript -->
+                            <div id="seats-container" class="col-span-8">
+                                <!-- Seats will be filled here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center space-x-8 mb-8">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-gray-200 rounded mr-2"></div>
+                            <span class="text-sm text-gray-600">Occupied</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-blue-100 rounded mr-2"></div>
+                            <span class="text-sm text-gray-600">Available</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-blue-600 rounded mr-2"></div>
+                            <span class="text-sm text-gray-600">Selected</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h3 class="font-medium text-gray-800 mb-3">Your Selection</h3>
+                        <div id="selected-seats" class="text-gray-600 mb-3">No seats selected</div>
+                        <div class="flex justify-between border-t border-gray-200 pt-3">
+                            <span class="font-medium">Total</span>
+                            <span class="font-bold" id="total-price">Rs.0.00</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="showTab('confirmation')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium text-lg transition">
+                        Continue to Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Confirmation Tab -->
+        <div id="confirmation" class="tab-content">
+            <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-green-100 p-6 text-center">
+                    <div class="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-check text-2xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-green-800 mb-2">Booking Successful!</h1>
+                    <p class="text-green-600">Your tickets have been booked successfully. A confirmation has been sent to your email.</p>
+                </div>
+                
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Booking Details</h2>
+                    
+                    <div class="flex mb-6">
+                        <div class="w-1/4">
+                            <img id="confirmation-poster" src="" alt="Movie Poster" class="w-full rounded-md">
+                        </div>
+                        <div class="w-3/4 pl-6">
+                            <h3 id="confirmation-title" class="text-lg font-bold text-gray-800 mb-1"></h3>
+                            <div id="confirmation-meta" class="text-gray-600 mb-2"></div>
+                            <div class="flex items-center mb-4">
+                                <div id="confirmation-stars"></div>
+                                <span id="confirmation-rating" class="ml-2 text-gray-600"></span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-500 uppercase">Date & Time</h4>
+                                    <p id="confirmation-time" class="text-gray-800"></p>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-500 uppercase">Theater</h4>
+                                    <p class="text-gray-800">CineBook IMAX #3</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-500 uppercase">Seats</h4>
+                                    <p id="confirmation-seats" class="text-gray-800"></p>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-500 uppercase">Booking ID</h4>
+                                    <p class="text-gray-800">CB78945612</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-4 mb-6">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600">Tickets (<span id="ticket-count">0</span>x)</span>
+                            <span class="text-gray-800" id="ticket-price">Rs.0.00</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600">Service Fee</span>
+                            <span class="text-gray-800">Rs.10.0</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg pt-2 border-t border-gray-200">
+                            <span>Total Paid</span>
+                            <span id="confirmation-total">Rs.0.00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                        <h3 class="font-medium text-blue-800 mb-2">Download Your Tickets</h3>
+                        <p class="text-blue-600 text-sm mb-3">You can download your tickets or show the QR code at the theater entrance.</p>
+                        <div class="flex space-x-3">
+                            <button onclick="window.location.href='download.html'" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                                <i class="fas fa-download mr-2"></i> Download PDF
+                            </button>
+                            <button onclick="window.location.href='qrcode.html'" class="bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-md text-sm font-medium transition">
+                                <i class="fas fa-qrcode mr-2"></i> Show QR Code
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <button onclick="showTab('movies')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-md font-medium transition">
+                            Back to Home
+                        </button>
+                        <button onclick="window.location.href='share.html'" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition">
+                            <i class="fas fa-share-alt mr-2"></i> Share Booking
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+        
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-4">CineBook</h3>
+                    <p class="text-gray-400">Book your movie tickets online and enjoy the best cinema experience.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="movies.html" class="text-gray-400 hover:text-white transition">Movies</a></li>
+                        <li><a href="theaters.html" class="text-gray-400 hover:text-white transition">Theaters</a></li>
+                        <li><a href="offers.html" class="text-gray-400 hover:text-white transition">Offers</a></li>
+                        <li><a href="giftcards.html" class="text-gray-400 hover:text-white transition">Gift Cards</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Contact</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400"><i class="fas fa-map-marker-alt mr-2"></i> 123 Cinema St, Movie City</li>
+                        <li class="flex items-center text-gray-400"><i class="fas fa-phone mr-2"></i> (123) 456-7890</li>
+                        <li class="flex items-center text-gray-400"><i class="fas fa-envelope mr-2"></i> info@cinebook.com</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="https://facebook.com/cinebook" target="_blank" class="text-gray-400 hover:text-white transition external-link">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://twitter.com/cinebook" target="_blank" class="text-gray-400 hover:text-white transition external-link">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://instagram.com/cinebook" target="_blank" class="text-gray-400 hover:text-white transition external-link">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://youtube.com/cinebook" target="_blank" class="text-gray-400 hover:text-white transition external-link">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-6 text-center text-gray-400">
+                <p>&copy; 2023 CineBook. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Movie database
+        const moviesDatabase = [
+            {
+                id: 1,
+                title: "GOOD BAD UGLY",
+                genres: ["Action", "Crime", "Thriller"],
+                duration: "138 min",
+                rating: 7.4,
+                poster: "https://source.unsplash.com/random/300x450/?movie,action",
+                overview: "A fearless don tries to change his ruthless ways and violent past to live peacefully with his family. However, his dark past continues to haunt him. He faces it head-on and overcomes it.",
+                director: "Adhik Ravichandran",
+                cast: "Ajith Kumar, Trisha Krishnan, Arjun Das, Priya Prakash Varrier",
+                date: "10 April 2025",
+                language: "Tamil",
+                certification: "PG-13"
+            },
+            {
+                id: 2,
+                title: "Interstellar",
+                genres: ["Sci-Fi", "Adventure", "Drama"],
+                duration: "169 min",
+                rating: 8.8,
+                poster: "https://source.unsplash.com/random/300x450/?movie,sci-fi",
+                overview: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+                director: "Christopher Nolan",
+                cast: "Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+                date: "November 7, 2014",
+                language: "English",
+                certification: "PG-13"
+            },
+            {
+                id: 3,
+                title: "The Grand Budapest Hotel",
+                genres: ["Comedy", "Drama"],
+                duration: "99 min",
+                rating: 7.9,
+                poster: "https://source.unsplash.com/random/300x450/?movie,comedy",
+                overview: "The adventures of Gustave H, a legendary concierge at a famous hotel, and Zero Moustafa, the lobby boy who becomes his most trusted friend.",
+                director: "Wes Anderson",
+                cast: "Ralph Fiennes, F. Murray Abraham, Mathieu Amalric",
+                date: "March 28, 2014",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 4,
+                title: "The Shawshank Redemption",
+                genres: ["Drama"],
+                duration: "142 min",
+                rating: 9.0,
+                poster: "https://source.unsplash.com/random/300x450/?movie,drama",
+                overview: "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
+                director: "Frank Darabont",
+                cast: "Tim Robbins, Morgan Freeman, Bob Gunton",
+                date: "October 14, 1994",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 5,
+                title: "Inception",
+                genres: ["Action", "Sci-Fi", "Thriller"],
+                duration: "148 min",
+                rating: 8.8,
+                poster: "https://source.unsplash.com/random/300x450/?movie,inception",
+                overview: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+                director: "Christopher Nolan",
+                cast: "Leonardo DiCaprio, Joseph Gordon-Levitt, Elliot Page",
+                date: "July 16, 2010",
+                language: "English",
+                certification: "PG-13"
+            },
+            {
+                id: 6,
+                title: "Pulp Fiction",
+                genres: ["Crime", "Drama"],
+                duration: "154 min",
+                rating: 8.9,
+                poster: "https://source.unsplash.com/random/300x450/?movie,pulp-fiction",
+                overview: "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
+                director: "Quentin Tarantino",
+                cast: "John Travolta, Uma Thurman, Samuel L. Jackson",
+                date: "October 14, 1994",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 7,
+                title: "The Godfather",
+                genres: ["Crime", "Drama"],
+                duration: "175 min",
+                rating: 9.2,
+                poster: "https://source.unsplash.com/random/300x450/?movie,godfather",
+                overview: "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.",
+                director: "Francis Ford Coppola",
+                cast: "Marlon Brando, Al Pacino, James Caan",
+                date: "March 24, 1972",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 8,
+                title: "Fight Club",
+                genres: ["Drama"],
+                duration: "139 min",
+                rating: 8.8,
+                poster: "https://source.unsplash.com/random/300x450/?movie,fight-club",
+                overview: "An insomniac office worker and a devil-may-care soapmaker form an underground fight club that evolves into something much, much more.",
+                director: "David Fincher",
+                cast: "Brad Pitt, Edward Norton, Meat Loaf",
+                date: "October 15, 1999",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 9,
+                title: "Forrest Gump",
+                genres: ["Drama", "Romance"],
+                duration: "142 min",
+                rating: 8.8,
+                poster: "https://source.unsplash.com/random/300x450/?movie,forrest-gump",
+                overview: "The presidencies of Kennedy and Johnson, the events of Vietnam, Watergate, and other historical events unfold through the perspective of an Alabama man with an IQ of 75.",
+                director: "Robert Zemeckis",
+                cast: "Tom Hanks, Robin Wright, Gary Sinise",
+                date: "July 6, 1994",
+                language: "English",
+                certification: "PG-13"
+            },
+            {
+                id: 10,
+                title: "The Matrix",
+                genres: ["Action", "Sci-Fi"],
+                duration: "136 min",
+                rating: 8.7,
+                poster: "https://source.unsplash.com/random/300x450/?movie,matrix",
+                overview: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+                director: "Lana Wachowski, Lilly Wachowski",
+                cast: "Keanu Reeves, Laurence Fishburne, Carrie-Anne Moss",
+                date: "March 31, 1999",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 11,
+                title: "Goodfellas",
+                genres: ["Crime", "Drama"],
+                duration: "146 min",
+                rating: 8.7,
+                poster: "https://source.unsplash.com/random/300x450/?movie,goodfellas",
+                overview: "The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners Jimmy Conway and Tommy DeVito.",
+                director: "Martin Scorsese",
+                cast: "Robert De Niro, Ray Liotta, Joe Pesci",
+                date: "September 21, 1990",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 12,
+                title: "The Silence of the Lambs",
+                genres: ["Crime", "Drama", "Thriller"],
+                duration: "118 min",
+                rating: 8.6,
+                poster: "https://source.unsplash.com/random/300x450/?movie,silence-lambs",
+                overview: "A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer to help catch another serial killer.",
+                director: "Jonathan Demme",
+                cast: "Jodie Foster, Anthony Hopkins, Lawrence A. Bonney",
+                date: "February 14, 1991",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 13,
+                title: "Saving Private Ryan",
+                genres: ["Drama", "War"],
+                duration: "169 min",
+                rating: 8.6,
+                poster: "https://source.unsplash.com/random/300x450/?movie,saving-private-ryan",
+                overview: "Following the Normandy Landings, a group of U.S. soldiers go behind enemy lines to retrieve a paratrooper whose brothers have been killed in action.",
+                director: "Steven Spielberg",
+                cast: "Tom Hanks, Matt Damon, Tom Sizemore",
+                date: "July 24, 1998",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 14,
+                title: "The Green Mile",
+                genres: ["Crime", "Drama", "Fantasy"],
+                duration: "189 min",
+                rating: 8.6,
+                poster: "https://source.unsplash.com/random/300x450/?movie,green-mile",
+                overview: "The lives of guards on Death Row are affected by one of their charges: a black man accused of child murder and rape, yet who has a mysterious gift.",
+                director: "Frank Darabont",
+                cast: "Tom Hanks, Michael Clarke Duncan, David Morse",
+                date: "December 10, 1999",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 15,
+                title: "The Departed",
+                genres: ["Crime", "Drama", "Thriller"],
+                duration: "151 min",
+                rating: 8.5,
+                poster: "https://source.unsplash.com/random/300x450/?movie,departed",
+                overview: "An undercover cop and a mole in the police attempt to identify each other while infiltrating an Irish gang in South Boston.",
+                director: "Martin Scorsese",
+                cast: "Leonardo DiCaprio, Matt Damon, Jack Nicholson",
+                date: "October 6, 2006",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 16,
+                title: "Gladiator",
+                genres: ["Action", "Adventure", "Drama"],
+                duration: "155 min",
+                rating: 8.5,
+                poster: "https://source.unsplash.com/random/300x450/?movie,gladiator",
+                overview: "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
+                director: "Ridley Scott",
+                cast: "Russell Crowe, Joaquin Phoenix, Connie Nielsen",
+                date: "May 5, 2000",
+                language: "English",
+                certification: "R"
+            },
+            {
+                id: 17,
+                title: "The Prestige",
+                genres: ["Drama", "Mystery", "Thriller"],
+                duration: "130 min",
+                rating: 8.5,
+                poster: "https://source.unsplash.com/random/300x450/?movie,prestige",
+                overview: "After a tragic accident, two stage magicians engage in a battle to create the ultimate illusion while sacrificing everything they have to outwit each other.",
+                director: "Christopher Nolan",
+                cast: "Christian Bale, Hugh Jackman, Scarlett Johansson",
+                date: "October 20, 2006",
+                language: "English",
+                certification: "PG-13"
+            },
+            {
+                id: 18,
+                title: "The Lion King",
+                genres: ["Animation", "Adventure", "Drama"],
+                duration: "88 min",
+                rating: 8.5,
+                poster: "https://source.unsplash.com/random/300x450/?movie,lion-king",
+                overview: "Lion prince Simba and his father are targeted by his bitter uncle, who wants to ascend the throne himself.",
+                director: "Roger Allers, Rob Minkoff",
+                cast: "Matthew Broderick, Jeremy Irons, James Earl Jones",
+                date: "June 24, 1994",
+                language: "English",
+                certification: "G"
+            },
+            {
+                id: 19,
+                title: "Avengers: Endgame",
+                genres: ["Action", "Adventure", "Sci-Fi"],
+                duration: "181 min",
+                rating: 8.4,
+                poster: "https://source.unsplash.com/random/300x450/?movie,avengers",
+                overview: "After the devastating events of Avengers: Infinity War, the universe is in ruins. With the help of remaining allies, the Avengers assemble once more.",
+                director: "Anthony Russo, Joe Russo",
+                cast: "Robert Downey Jr., Chris Evans, Mark Ruffalo",
+                date: "April 26, 2019",
+                language: "English",
+                certification: "PG-13"
+            },
+            {
+                id: 20,
+                title: "Whiplash",
+                genres: ["Drama", "Music"],
+                duration: "106 min",
+                rating: 8.5,
+                poster: "https://source.unsplash.com/random/300x450/?movie,whiplash",
+                overview: "A promising young drummer enrolls at a cut-throat music conservatory where his dreams of greatness are mentored by an instructor who will stop at nothing.",
+                director: "Damien Chazelle",
+                cast: "Miles Teller, J.K. Simmons, Melissa Benoist",
+                date: "October 15, 2014",
+                language: "English",
+                certification: "R"
+            }
+        ];
+
+        // Current selected movie
+        let currentMovie = null;
+        let selectedSeats = [];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            filterMovies('all');
+        });
+
+        // Tab navigation
+        function showTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Find and activate the corresponding nav link
+            const navLinks = document.querySelectorAll('.nav-link');
+            for (let link of navLinks) {
+                if (link.getAttribute('onclick').includes(tabId)) {
+                    link.classList.add('active');
+                    break;
+                }
+            }
+        }
+        
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+        
+        // Filter movies by genre
+        function filterMovies(genre) {
+            // Update active filter button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            
+            const activeBtn = document.querySelector(`.filter-btn[onclick="filterMovies('${genre}')"]`);
+            activeBtn.classList.add('active', 'bg-blue-600', 'text-white');
+            activeBtn.classList.remove('bg-gray-200');
+            
+            // Filter movies
+            let filteredMovies = [];
+            if (genre === 'all') {
+                filteredMovies = moviesDatabase;
+            } else {
+                filteredMovies = moviesDatabase.filter(movie => 
+                    movie.genres.some(g => g.toLowerCase() === genre)
+                );
+            }
+            
+            // Display movies
+            displayMovies(filteredMovies);
+        }
+        
+        // Display movies in the grid
+        function displayMovies(movies) {
+            const container = document.getElementById('movies-container');
+            container.innerHTML = '';
+            
+            movies.forEach(movie => {
+                const stars = getStarRating(movie.rating);
+                
+                const movieCard = document.createElement('div');
+                movieCard.className = 'movie-card bg-white rounded-lg overflow-hidden';
+                movieCard.innerHTML = `
+                    <div class="relative">
+                        <img src="${movie.poster}" alt="${movie.title}" class="w-full h-64 object-cover">
+                        <div class="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded-md text-sm font-medium">
+                            IMDB ${movie.rating}
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">${movie.title}</h3>
+                        <div class="flex items-center text-gray-600 text-sm mb-2">
+                            <span>${movie.genres.join(', ')}</span>
+                            <span class="mx-2">•</span>
+                            <span>${movie.duration}</span>
+                        </div>
+                        <div class="flex mb-4">
+                            ${stars}
+                        </div>
+                        <button onclick="showMovieDetails(${movie.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition">
+                            View Details
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(movieCard);
+            });
+        }
+        
+        // Show movie details
+        function showMovieDetails(movieId) {
+            const movie = moviesDatabase.find(m => m.id === movieId);
+            currentMovie = movie;
+            
+            // Set poster
+            document.getElementById('detail-poster').src = movie.poster;
+            document.getElementById('detail-poster').alt = movie.title;
+            
+            // Set title
+            document.getElementById('detail-title').textContent = movie.title;
+            
+            // Set meta info
+            const metaElement = document.getElementById('detail-meta');
+            metaElement.innerHTML = `
+                <span>${movie.genres.join(', ')}</span>
+                <span class="mx-2">•</span>
+                <span>${movie.duration}</span>
+                <span class="mx-2">•</span>
+                <span>${movie.certification}</span>
+            `;
+            
+            // Set rating
+            document.getElementById('detail-rating').textContent = movie.rating;
+            
+            // Set stars
+            document.getElementById('detail-stars').innerHTML = getStarRating(movie.rating, 'text-xl');
+            
+            // Set overview
+            document.getElementById('detail-overview').textContent = movie.overview;
+            
+            // Set director
+            document.getElementById('detail-director').textContent = movie.director;
+            
+            // Set cast
+            document.getElementById('detail-cast').textContent = movie.cast;
+            
+            // Set date
+            document.getElementById('detail-date').textContent = movie.date;
+            
+            // Set language
+            document.getElementById('detail-language').textContent = movie.language;
+            
+            // Generate showtimes
+            const showtimesElement = document.getElementById('showtimes');
+            showtimesElement.innerHTML = '';
+            
+            const showtimes = [
+                { time: "10:00 AM", type: "Standard" },
+                { time: "1:30 PM", type: "Standard" },
+                { time: "4:45 PM", type: "IMAX" },
+                { time: "8:00 PM", type: "Standard" },
+                { time: "10:30 PM", type: "Standard" }
+            ];
+            
+            showtimes.forEach((showtime, index) => {
+                const button = document.createElement('button');
+                button.className = `bg-gray-100 hover:bg-blue-100 border border-gray-200 rounded-md py-2 px-3 text-center transition ${index === 2 ? 'bg-blue-100 border-blue-200' : ''}`;
+                button.innerHTML = `
+                    <div class="font-medium">${showtime.time}</div>
+                    <div class="text-sm ${index === 2 ? 'text-blue-600' : 'text-gray-600'}">${showtime.type}</div>
+                `;
+                button.onclick = function() {
+                    showTab('seats');
+                    updateSeatsView();
+                };
+                showtimesElement.appendChild(button);
+            });
+            
+            // Show details tab
+            showTab('details');
+        }
+        
+        // Update seats view
+        function updateSeatsView() {
+            if (!currentMovie) return;
+            
+            // Set movie title
+            document.getElementById('seats-title').textContent = currentMovie.title;
+            
+            // Set movie meta
+            const metaElement = document.getElementById('seats-meta');
+            metaElement.innerHTML = `
+                <span>IMAX</span>
+                <span class="mx-2">•</span>
+                <span>4:45 PM</span>
+                <span class="mx-2">•</span>
+                <span>July 15, 2023</span>
+            `;
+            
+            // Generate seats
+            const seatsContainer = document.getElementById('seats-container');
+            seatsContainer.innerHTML = '';
+            
+            const rows = ['A', 'B', 'C', 'D', 'E','F','G'];
+            const seatsPerRow = 10;
+            
+            rows.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'col-span-8 flex justify-center mb-1';
+                
+                for (let i = 1; i <= seatsPerRow; i++) {
+                    const seat = document.createElement('div');
+                    seat.className = 'seat available';
+                    seat.textContent = `${row}${i}`;
+                    
+                    // Randomly make some seats occupied
+                    if (Math.random() < 0.2) {
+                        seat.classList.remove('available');
+                        seat.classList.add('occupied');
+                    } else {
+                        seat.onclick = function() { toggleSeat(this); };
+                    }
+                    
+                    rowDiv.appendChild(seat);
+                }
+                
+                seatsContainer.appendChild(rowDiv);
+            });
+        }
+        
+        // Toggle seat selection
+        function toggleSeat(seatElement) {
+            if (seatElement.classList.contains('occupied')) return;
+            
+            seatElement.classList.toggle('selected');
+            updateSelectedSeats();
+        }
+        
+        // Update selected seats display
+        function updateSelectedSeats() {
+            const selectedSeatsElements = document.querySelectorAll('.seat.selected');
+            const selectedSeatsContainer = document.getElementById('selected-seats');
+            const totalPriceElement = document.getElementById('total-price');
+            
+            selectedSeats = Array.from(selectedSeatsElements).map(seat => seat.textContent);
+            
+            if (selectedSeats.length === 0) {
+                selectedSeatsContainer.textContent = 'No seats selected';
+                totalPriceElement.textContent = 'Rs.00';
+                return;
+            }
+            
+            selectedSeatsContainer.textContent = selectedSeats.join(', ');
+            
+            const totalPrice = selectedSeats.length * 200;
+            totalPriceElement.textContent = `Rs.${totalPrice.toFixed(2)}`;
+            
+            // Update confirmation page data
+            updateConfirmationPage();
+        }
+        
+        // Update confirmation page
+        function updateConfirmationPage() {
+            if (!currentMovie) return;
+            
+            // Set poster
+            document.getElementById('confirmation-poster').src = currentMovie.poster;
+            document.getElementById('confirmation-poster').alt = currentMovie.title;
+            
+            // Set title
+            document.getElementById('confirmation-title').textContent = currentMovie.title;
+            
+            // Set meta
+            const metaElement = document.getElementById('confirmation-meta');
+            metaElement.innerHTML = `
+                <span>IMAX</span>
+                <span class="mx-2">•</span>
+                <span>${currentMovie.duration}</span>
+                <span class="mx-2">•</span>
+                <span>${currentMovie.certification}</span>
+            `;
+            
+            // Set stars
+            document.getElementById('confirmation-stars').innerHTML = getStarRating(currentMovie.rating);
+            
+            // Set rating
+            document.getElementById('confirmation-rating').textContent = `${currentMovie.rating}/10`;
+            
+            // Set time
+            document.getElementById('confirmation-time').textContent = 'July 15, 2023 • 4:45 PM';
+            
+            // Set seats
+            document.getElementById('confirmation-seats').textContent = selectedSeats.join(', ');
+            
+            // Set ticket count
+            document.getElementById('ticket-count').textContent = selectedSeats.length;
+            
+            // Set ticket price
+            const ticketPrice = selectedSeats.length * 200;
+            document.getElementById('ticket-price').textContent = `Rs.${ticketPrice.toFixed(2)}`;
+            
+            // Set total
+            const total = ticketPrice + 10.0;
+            document.getElementById('confirmation-total').textContent = `Rs.${total.toFixed(2)}`;
+        }
+        
+        // Get star rating HTML
+        function getStarRating(rating, sizeClass = '') {
+            const fullStars = Math.floor(rating / 2);
+            const hasHalfStar = rating % 2 >= 0.5;
+            let starsHTML = '';
+            
+            for (let i = 0; i < fullStars; i++) {
+                starsHTML += `<i class="fas fa-star rating-star ${sizeClass}"></i>`;
+            }
+            
+            if (hasHalfStar) {
+                starsHTML += `<i class="fas fa-star-half-alt rating-star ${sizeClass}"></i>`;
+            }
+            
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            for (let i = 0; i < emptyStars; i++) {
+                starsHTML += `<i class="far fa-star rating-star ${sizeClass}"></i>`;
+            }
+            
+            return starsHTML;
+        }
+    </script>
+</body>
+</html>
